@@ -1,26 +1,31 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react'
+import './App.css'
+import BlogPosts from './components/BlogPosts'
+import Failure from './components/Failure'
+import FetchPosts from './components/FetchPosts'
+import Loading from './components/Loading'
+import { RemoteData, Post } from './shared/types'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+import { fetchPosts } from './utils/apiCalls'
+import { foldRemoteData } from './utils/foldRemoteData'
+
+function App(): JSX.Element {
+  const [posts, setPosts] = useState<RemoteData<Error, Post[]>>({
+    type: 'NOT_ASKED',
+  })
+
+  const getPosts = () => {
+    setPosts({ type: 'LOADING' })
+    fetchPosts().then(remoteData => setPosts(remoteData))
+  }
+  // this reminds me of pipe minus the currying
+  return foldRemoteData(
+    posts,
+    () => <FetchPosts getPosts={getPosts} />,
+    () => <Loading />,
+    error => <Failure error={error} />,
+    data => <BlogPosts data={data} />
+  )
 }
 
-export default App;
+export default App
